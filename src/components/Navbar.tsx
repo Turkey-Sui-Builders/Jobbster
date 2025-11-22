@@ -58,6 +58,14 @@ export function Navbar() {
                 Find Best Job
               </Link>
             </TabNav.Link>
+            <TabNav.Link asChild active={location.pathname === '/review-applications'}>
+              <Link to="/review-applications" style={{ 
+                color: location.pathname === '/review-applications' ? "var(--accent-11)" : "var(--gray-11)", 
+                fontWeight: location.pathname === '/review-applications' ? 600 : 500 
+              }}>
+                Review Applications
+              </Link>
+            </TabNav.Link>
           </TabNav.Root>
         </Box>
 

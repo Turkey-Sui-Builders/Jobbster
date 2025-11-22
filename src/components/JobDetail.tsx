@@ -4,7 +4,9 @@ import {
   RocketIcon,
   PersonIcon,
   CalendarIcon,
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  UploadIcon,
+  FileTextIcon
 } from "@radix-ui/react-icons";
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -157,8 +159,30 @@ export default function JobDetail() {
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const [resumeLink, setResumeLink] = useState("");
   const [coverLetter, setCoverLetter] = useState("");
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadMethod, setUploadMethod] = useState<"link" | "upload">("link");
 
   const job = ALL_JOBS.find(j => j.id === jobId);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file type (PDF, DOC, DOCX)
+      const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (!validTypes.includes(file.type)) {
+        alert('Please upload a PDF or Word document');
+        return;
+      }
+      
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB');
+        return;
+      }
+      
+      setUploadedFile(file);
+    }
+  };
 
   if (!job) {
     return (
@@ -173,13 +197,23 @@ export default function JobDetail() {
 
   const handleApply = () => {
     // TODO: Integrate with smart contract
-    console.log("Application submitted:", {
+    const applicationData = {
       jobId: job.id,
-      resumeLink,
+      resumeLink: uploadMethod === "link" ? resumeLink : uploadedFile?.name,
+      resumeFile: uploadedFile,
       coverLetter
-    });
+    };
+    
+    console.log("Application submitted:", applicationData);
+    
+    // In production, you would upload the file to IPFS or cloud storage first
+    // then submit the link to the smart contract
+    
     alert("Application submitted successfully!");
     setShowApplicationForm(false);
+    setResumeLink("");
+    setCoverLetter("");
+    setUploadedFile(null);
   };
 
   return (
@@ -307,17 +341,84 @@ export default function JobDetail() {
               <Flex direction="column" gap="3">
                 <Heading size="4" mb="2">Submit Application</Heading>
                 
+                {/* Upload Method Selector */}
                 <Box>
-                  <Text size="2" weight="medium" mb="2">Resume Link</Text>
-                  <TextField.Root
-                    placeholder="https://..."
-                    value={resumeLink}
-                    onChange={(e) => setResumeLink(e.target.value)}
-                  />
+                  <Text size="2" weight="medium" mb="2">Resume *</Text>
+                  <Flex gap="2" mb="3">
+                    <Button
+                      size="2"
+                      variant={uploadMethod === "link" ? "solid" : "soft"}
+                      color={uploadMethod === "link" ? "iris" : "gray"}
+                      onClick={() => setUploadMethod("link")}
+                      style={{ flex: 1, cursor: "pointer" }}
+                    >
+                      Provide Link
+                    </Button>
+                    <Button
+                      size="2"
+                      variant={uploadMethod === "upload" ? "solid" : "soft"}
+                      color={uploadMethod === "upload" ? "iris" : "gray"}
+                      onClick={() => setUploadMethod("upload")}
+                      style={{ flex: 1, cursor: "pointer" }}
+                    >
+                      Upload File
+                    </Button>
+                  </Flex>
+
+                  {uploadMethod === "link" ? (
+                    <Box>
+                      <TextField.Root
+                        placeholder="https://..."
+                        value={resumeLink}
+                        onChange={(e) => setResumeLink(e.target.value)}
+                      />
+                      <Text size="1" color="gray" mt="1">
+                        Link to your online resume (Google Drive, Dropbox, etc.)
+                      </Text>
+                    </Box>
+                  ) : (
+                    <Box>
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        onChange={handleFileUpload}
+                        style={{ display: "none" }}
+                        id="resume-upload"
+                      />
+                      <label htmlFor="resume-upload">
+                        <Button
+                          size="3"
+                          variant="soft"
+                          style={{ width: "100%", cursor: "pointer" }}
+                          asChild
+                        >
+                          <span>
+                            <UploadIcon />
+                            {uploadedFile ? "Change File" : "Choose File"}
+                          </span>
+                        </Button>
+                      </label>
+                      {uploadedFile && (
+                        <Flex align="center" gap="2" mt="2" p="2" style={{ 
+                          backgroundColor: "var(--accent-2)", 
+                          borderRadius: "6px" 
+                        }}>
+                          <FileTextIcon color="var(--accent-9)" />
+                          <Text size="2" style={{ flex: 1 }}>{uploadedFile.name}</Text>
+                          <Text size="1" color="gray">
+                            {(uploadedFile.size / 1024).toFixed(1)} KB
+                          </Text>
+                        </Flex>
+                      )}
+                      <Text size="1" color="gray" mt="1">
+                        PDF or Word document (max 5MB)
+                      </Text>
+                    </Box>
+                  )}
                 </Box>
 
                 <Box>
-                  <Text size="2" weight="medium" mb="2">Cover Letter</Text>
+                  <Text size="2" weight="medium" mb="2">Cover Letter *</Text>
                   <TextArea
                     placeholder="Tell us why you're a great fit..."
                     rows={6}
@@ -331,14 +432,23 @@ export default function JobDetail() {
                     variant="solid" 
                     style={{ flex: 1 }}
                     onClick={handleApply}
-                    disabled={!resumeLink || !coverLetter}
+                    disabled={
+                      (uploadMethod === "link" && !resumeLink) || 
+                      (uploadMethod === "upload" && !uploadedFile) || 
+                      !coverLetter
+                    }
                   >
                     Submit
                   </Button>
                   <Button 
                     variant="soft" 
                     color="gray"
-                    onClick={() => setShowApplicationForm(false)}
+                    onClick={() => {
+                      setShowApplicationForm(false);
+                      setResumeLink("");
+                      setCoverLetter("");
+                      setUploadedFile(null);
+                    }}
                   >
                     Cancel
                   </Button>

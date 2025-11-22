@@ -7,6 +7,7 @@ import DashboardPage from "./components/DashboardPage";
 import JobDetail from "./components/JobDetail";
 import CreateJob from "./components/CreateJob";
 import Chatbot from "./components/Chatbot";
+import ReviewApplications from "./components/ReviewApplications";
 import FindBestJobPage from "./components/FindBestJobPage"; // İlan Listesi (Önceki adımlarda placeholder yapmıştık)
 
 // Uygulama içi düzen (Navbar'ın göründüğü yer)
@@ -35,6 +36,7 @@ function App() {
            <Route path="/job/:jobId" element={<JobDetail />} />
            <Route path="/create-job" element={<CreateJob />} />
            <Route path="/dashboard" element={<DashboardPage />} />
+           <Route path="/review-applications" element={<ReviewApplications />} />
             <Route path="/find-best-job" element={<FindBestJobPage />} />
         </Route>
       </Routes>
