@@ -28,8 +28,8 @@ fun setup_test(): Scenario {
 }
 
 // ==========================================
-// ✅ TEST 1: MUTLU YOL (Full Happy Path)
-// İlan Aç -> Başvur (Walrus verileriyle) -> İşe Al -> NFT Kontrolü
+// TEST 1: MUTLU YOL (Full Happy Path)
+// İlan Aç -> Başvur -> İşe Al -> NFT Kontrolü
 // ==========================================
 #[test]
 fun test_full_hiring_flow() {
@@ -59,7 +59,7 @@ fun test_full_hiring_flow() {
         ts::return_shared(version);
     };
 
-    // ADIM B: Aday Başvurur (Walrus verileriyle)
+    // ADIM B: Aday Başvurur
     ts::next_tx(&mut scenario, ADAY_1);
     {
         let mut job = ts::take_shared<Job>(&scenario);
@@ -68,12 +68,11 @@ fun test_full_hiring_flow() {
 
         job_hire::apply(
             &mut job,
-            b"Ahmet", // Aday İsmi
+            b"Ahmet",
             &version,
             &clock,
-            b"blob_id_123", // Walrus Blob ID (Dummy)
-            b"encrypted_key", // Seal Encrypted Key (Dummy)
-            b"cover_letter", // Cover Letter
+            b"cv.pdf",
+            b"cover",
             ctx,
         );
         ts::return_shared(job);
@@ -91,8 +90,8 @@ fun test_full_hiring_flow() {
         job_hire::hire(
             &mut job,
             &clock,
-            b"Google", // NFT Şirket Adı
-            b"Backend", // NFT Unvan
+            b"Google",
+            b"Backend",
             &cap,
             ADAY_1,
             &version,
@@ -107,10 +106,10 @@ fun test_full_hiring_flow() {
     // ADIM D: Kritik Kontrol - NFT Adaya Gitti mi?
     ts::next_tx(&mut scenario, ADAY_1);
     {
-        // 'take_from_sender' kullanıyoruz çünkü NFT adayın cüzdanına yollandı (Son koduna göre).
+        // 'take_from_sender' kullanıyoruz çünkü NFT adayın cüzdanına yollandı.
         let proof = ts::take_from_sender<WorkProof>(&scenario);
 
-        // Test başarılıysa iade et
+        // Eğer buraya kadar hata vermediyse NFT başarıyla gelmiştir.
         ts::return_to_sender(&scenario, proof);
     };
 
@@ -119,7 +118,7 @@ fun test_full_hiring_flow() {
 }
 
 // ==========================================
-// 🔄 TEST 2: BAŞVURU İPTALİ VE TEKRAR (Cancel & Re-Apply)
+//  TEST 2: BAŞVURU İPTALİ VE TEKRAR (Cancel & Re-Apply)
 // Başvur -> İptal Et -> Tekrar Başvur (Hata vermemeli)
 // ==========================================
 #[test]
@@ -158,8 +157,7 @@ fun test_cancel_and_reapply() {
             b"Aday",
             &version,
             &clock,
-            b"blob",
-            b"key",
+            b"link",
             b"ltr",
             ts::ctx(&mut scenario),
         );
@@ -192,8 +190,7 @@ fun test_cancel_and_reapply() {
             b"Aday V2",
             &version,
             &clock,
-            b"blob2",
-            b"key2",
+            b"link2",
             b"ltr2",
             ts::ctx(&mut scenario),
         );
@@ -207,7 +204,7 @@ fun test_cancel_and_reapply() {
 }
 
 // ==========================================
-// ⏰ TEST 3: SÜRESİ GEÇMİŞ İLAN (Deadline)
+//  TEST 3: SÜRESİ GEÇMİŞ İLAN (Deadline)
 // Süre dolduktan sonra başvuru yapılamamalı.
 // ==========================================
 #[test]
@@ -216,7 +213,7 @@ fun test_deadline_passed() {
     let mut scenario = setup_test();
     let mut clock = clock::create_for_testing(ts::ctx(&mut scenario));
 
-    // 1. İlan Aç
+    // 1. İlan Aç (Deadline: 100,000)
     ts::next_tx(&mut scenario, PATRON);
     {
         let mut board = ts::take_shared<JobBoard>(&scenario);
@@ -237,7 +234,7 @@ fun test_deadline_passed() {
         ts::return_shared(version);
     };
 
-    // 2. Zamanı İleri Sar (Time Travel)
+    // 2. Zamanı İleri Sar (Time Travel: 100,001)
     clock::set_for_testing(&mut clock, JOB_DEADLINE + 1);
 
     // 3. Başvurmaya Çalış (Hata Vermeli)
@@ -251,8 +248,7 @@ fun test_deadline_passed() {
             b"Aday",
             &version,
             &clock,
-            b"blob",
-            b"key",
+            b"link",
             b"ltr",
             ts::ctx(&mut scenario),
         );
@@ -266,7 +262,7 @@ fun test_deadline_passed() {
 }
 
 // ==========================================
-// 🚫 TEST 4: ÇİFT BAŞVURU (Double Apply)
+//  TEST 4: ÇİFT BAŞVURU (Double Apply)
 // Aynı kişi aynı ilana iki kere başvuramaz.
 // ==========================================
 #[test]
@@ -306,8 +302,7 @@ fun test_double_application() {
             b"Aday",
             &version,
             &clock,
-            b"blob",
-            b"key",
+            b"link",
             b"ltr",
             ts::ctx(&mut scenario),
         );
@@ -326,8 +321,7 @@ fun test_double_application() {
             b"Aday",
             &version,
             &clock,
-            b"blob",
-            b"key",
+            b"link",
             b"ltr",
             ts::ctx(&mut scenario),
         );
@@ -341,7 +335,7 @@ fun test_double_application() {
 }
 
 // ==========================================
-// 🏴‍☠️ TEST 5: YETKİSİZ HIRE (Unauthorized)
+//  TEST 5: YETKİSİZ HIRE (Unauthorized)
 // Hacker, Patronun ilanını kapatmaya çalışıyor.
 // ==========================================
 #[test]
@@ -404,8 +398,11 @@ fun test_hacker_cannot_hire() {
     // 3. SALDIRI: Hacker, Patronun ilanını kendi Cap'iyle kapatmaya çalışır
     ts::next_tx(&mut scenario, HACKER);
     {
+        // Hedef ilanı ID ile çekiyoruz
         let mut target_job = ts::take_shared_by_id<Job>(&scenario, target_job_id);
         let version = ts::take_shared<Version>(&scenario);
+
+        // Hacker'ın kendi anahtarı
         let wrong_cap = ts::take_from_sender<EmployerCap>(&scenario);
         let ctx = ts::ctx(&mut scenario);
 
@@ -430,7 +427,8 @@ fun test_hacker_cannot_hire() {
 }
 
 // ==========================================
-// 🚫 TEST 6: OLMAYAN BAŞVURUYU İPTAL ETME
+// TEST 6: OLMAYAN BAŞVURUYU İPTAL ETME
+// Başvurmamış biri iptal etmeye çalışırsa hata vermeli.
 // ==========================================
 #[test]
 #[expected_failure(abort_code = job_hire::ENotAuthorized)]
@@ -465,106 +463,9 @@ fun test_cancel_without_applying() {
         let mut job = ts::take_shared<Job>(&scenario);
         let version = ts::take_shared<Version>(&scenario);
 
+        // dof::exists_ kontrolü false dönecek ve ENotAuthorized fırlatacak
         job_hire::cancel_application(&mut job, &version, &clock, ts::ctx(&mut scenario));
 
-        ts::return_shared(job);
-        ts::return_shared(version);
-    };
-
-    clock::destroy_for_testing(clock);
-    ts::end(scenario);
-}
-
-// ==========================================
-// ❌ TEST 7: REDDEDİLEN ADAYIN İŞE ALINAMAMASI (Deny Logic)
-// ==========================================
-#[test]
-#[expected_failure(abort_code = job_hire::EApplicationDenied)]
-fun test_deny_and_fail_hire() {
-    let mut scenario = setup_test();
-    let clock = clock::create_for_testing(ts::ctx(&mut scenario));
-
-    // 1. İlan Aç
-    ts::next_tx(&mut scenario, PATRON);
-    {
-        let mut board = ts::take_shared<JobBoard>(&scenario);
-        let version = ts::take_shared<Version>(&scenario);
-        job_hire::create_job(
-            &mut board,
-            &version,
-            b"X",
-            b"X",
-            b"X",
-            b"X",
-            b"X",
-            option::none(),
-            JOB_DEADLINE,
-            ts::ctx(&mut scenario),
-        );
-        ts::return_shared(board);
-        ts::return_shared(version);
-    };
-
-    // 2. Aday Başvurur
-    ts::next_tx(&mut scenario, ADAY_1);
-    {
-        let mut job = ts::take_shared<Job>(&scenario);
-        let version = ts::take_shared<Version>(&scenario);
-        job_hire::apply(
-            &mut job,
-            b"Reddedilecek Adam",
-            &version,
-            &clock,
-            b"blob",
-            b"key",
-            b"ltr",
-            ts::ctx(&mut scenario),
-        );
-        ts::return_shared(job);
-        ts::return_shared(version);
-    };
-
-    // 3. Patron Başvuruyu Reddeder (DENY)
-    ts::next_tx(&mut scenario, PATRON);
-    {
-        let mut job = ts::take_shared<Job>(&scenario);
-        let version = ts::take_shared<Version>(&scenario);
-        let cap = ts::take_from_sender<EmployerCap>(&scenario);
-
-        job_hire::deny_application(
-            &mut job,
-            &cap,
-            ADAY_1,
-            &version,
-            ts::ctx(&mut scenario),
-        );
-
-        ts::return_to_sender(&scenario, cap);
-        ts::return_shared(job);
-        ts::return_shared(version);
-    };
-
-    // 4. Patron Yanlışlıkla İşe Almaya Çalışır (HATA VERMELİ)
-    ts::next_tx(&mut scenario, PATRON);
-    {
-        let mut job = ts::take_shared<Job>(&scenario);
-        let version = ts::take_shared<Version>(&scenario);
-        let cap = ts::take_from_sender<EmployerCap>(&scenario);
-        let ctx = ts::ctx(&mut scenario);
-
-        // EApplicationDenied hatası beklenir
-        job_hire::hire(
-            &mut job,
-            &clock,
-            b"X",
-            b"X",
-            &cap,
-            ADAY_1,
-            &version,
-            ctx,
-        );
-
-        ts::return_to_sender(&scenario, cap);
         ts::return_shared(job);
         ts::return_shared(version);
     };
