@@ -2,6 +2,14 @@ import { Box, Card, Flex, Heading, Text, TextField, TextArea, Button, Select } f
 import { RocketIcon, CheckCircledIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  useCurrentAccount,
+  useSignAndExecuteTransaction,
+  useSuiClient,
+} from "@mysten/dapp-kit";
+import { Transaction } from "@mysten/sui/transactions";
+import { useQueryClient } from "@tanstack/react-query";
+import suiLogo from "../assets/sui_sea.png";
 
 // Categories matching the smart contract
 const CATEGORIES = [
@@ -10,13 +18,18 @@ const CATEGORIES = [
   "Security",
   "Business Development",
   "Accounting",
-  "Infrastructure",
+  "Software Developer",
   "Marketing",
   "Product Management"
 ];
 
 export default function CreateJob() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const suiClient = useSuiClient();
+  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
+  const account = useCurrentAccount();
+
   const [formData, setFormData] = useState({
     name: "",
     company: "",
@@ -30,29 +43,57 @@ export default function CreateJob() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!account?.address) {
+      alert("Please connect your wallet first");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // TODO: Integrate with smart contract
-      // Convert form data to match smart contract structure:
-      // - category: vector<u8> (string.utf8)
-      // - name: vector<u8>
-      // - description: vector<u8>
-      // - salary: option::Option<u64>
-      // - deadline: u64 (timestamp)
+      const tx = new Transaction();
+      
+      // Convert deadline to timestamp (milliseconds)
+      const deadlineTimestamp = new Date(formData.deadline).getTime();
+      
+      // Prepare salary as Option<u64>
+      const salaryValue = formData.salary ? parseInt(formData.salary) : null;
 
-      console.log("Creating job with data:", {
-        name: formData.name,
-        category: formData.category,
-        description: formData.description,
-        salary: formData.salary ? parseInt(formData.salary) : null,
-        deadline: new Date(formData.deadline).getTime()
+      // Call create_job function from smart contract
+      tx.moveCall({
+        target: `${import.meta.env.VITE_PACKAGE_ID}::job_hire::create_job`,
+        arguments: [
+          tx.object(import.meta.env.VITE_JOB_BOARD_ID), // job_board: &mut JobBoard
+          tx.object(import.meta.env.VITE_VERSION_ID), // version: &Version
+          tx.pure.string(formData.company), // company: vector<u8>
+          tx.pure.string(formData.location), // location: vector<u8>
+          tx.pure.string(formData.category), // category: vector<u8>
+          tx.pure.string(formData.name), // name: vector<u8>
+          tx.pure.string(formData.description), // description: vector<u8>
+          salaryValue !== null 
+            ? tx.pure.option("u64", salaryValue) 
+            : tx.pure.option("u64", null), // salary: option::Option<u64>
+          tx.pure.u64(deadlineTimestamp), // deadline: u64
+        ],
       });
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Sign and execute transaction
+      const result = await signAndExecute({ transaction: tx });
       
-      alert("Job posted successfully!");
+      // Wait for transaction confirmation
+      await suiClient.waitForTransaction({
+        digest: result.digest,
+      });
+
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === "testnet" &&
+          query.queryKey[1] === "getOwnedObjects",
+      });
+
+      alert("Job posted successfully on the blockchain!");
       navigate("/jobs");
     } catch (error) {
       console.error("Error creating job:", error);
@@ -202,7 +243,24 @@ export default function CreateJob() {
             </Box>
 
             {/* Info Box */}
-            
+            <Card style={{ 
+              backgroundColor: "var(--accent-2)", 
+              border: "1px solid var(--accent-6)",
+              padding: "16px"
+            }}>
+              <Flex align="center" gap="3">
+                <img 
+                  src={suiLogo}
+                  alt="Sui Logo" 
+                  style={{ width: "30px", height: "40px" }}
+                />
+                <Box style={{ flex: 1 }}>
+                  <Text size="3" weight="bold" mb="1" style={{ display: "block" }}>
+                    Posting Fee: 5 SUI
+                  </Text>
+                </Box>
+              </Flex>
+            </Card>
 
             {/* Action Buttons */}
             <Flex gap="3" mt="2">

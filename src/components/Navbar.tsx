@@ -1,7 +1,7 @@
 import { ConnectButton } from "@mysten/dapp-kit";
 import { Link, useLocation } from "react-router-dom";
 import { Box, Flex, Heading, Button, TabNav, Text } from "@radix-ui/themes";
-import { SewingPinFilledIcon } from "@radix-ui/react-icons";
+import joboMascot from "../assets/jobo.jpg";
 
 export function Navbar() {
   const location = useLocation();
@@ -24,9 +24,30 @@ export function Navbar() {
         {/* 1. Logo Alanı */}
         <Link to="/" style={{ textDecoration: 'none' }}>
           <Flex align="center" gap="2">
-            <SewingPinFilledIcon width="24" height="24" color="var(--accent-9)" />
+            <Box
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                overflow: "hidden",
+                border: "2px solid var(--accent-9)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+            >
+              <img 
+                src={joboMascot} 
+                alt="Jobo" 
+                style={{ 
+                  width: "100%", 
+                  height: "100%", 
+                  objectFit: "cover"
+                }} 
+              />
+            </Box>
             <Heading as="h2" size="5" weight="bold" style={{ color: "var(--accent-11)" }}>
-              Sui Job Board
+              Jobster
             </Heading>
           </Flex>
         </Link>
@@ -48,14 +69,6 @@ export function Navbar() {
                 fontWeight: location.pathname === '/jobs' ? 600 : 500 
               }}>
                 All Jobs
-              </Link>
-            </TabNav.Link>
-            <TabNav.Link asChild active={location.pathname === '/find-best-job'}>
-              <Link to="/find-best-job" style={{ 
-                color: location.pathname === '/find-best-job' ? "var(--accent-11)" : "var(--gray-11)", 
-                fontWeight: location.pathname === '/find-best-job' ? 600 : 500 
-              }}>
-                Find Best Job
               </Link>
             </TabNav.Link>
             <TabNav.Link asChild active={location.pathname === '/review-applications'}>

@@ -1,6 +1,7 @@
 import { Box, Card, Flex, Heading, Text, TextField, Button, Avatar, ScrollArea } from "@radix-ui/themes";
-import { ChatBubbleIcon, Cross2Icon, PaperPlaneIcon } from "@radix-ui/react-icons";
+import { Cross2Icon, PaperPlaneIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
+import joboMascot from "../assets/jobo.jpg";
 
 interface Message {
   id: string;
@@ -106,19 +107,37 @@ export default function Chatbot() {
         }}
       >
         {!isOpen ? (
-          <Button
-            size="4"
+          <Box
             style={{
-              borderRadius: "50%",
               width: "64px",
               height: "64px",
+              borderRadius: "50%",
+              overflow: "hidden",
               cursor: "pointer",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)"
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+              border: "3px solid var(--accent-9)",
+              transition: "all 0.3s ease"
             }}
             onClick={() => setIsOpen(true)}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "scale(1.05)";
+              e.currentTarget.style.boxShadow = "0 6px 16px rgba(0, 0, 0, 0.2)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
+            }}
           >
-            <ChatBubbleIcon width="28" height="28" />
-          </Button>
+            <img 
+              src={joboMascot} 
+              alt="Jobo Assistant" 
+              style={{ 
+                width: "100%", 
+                height: "100%", 
+                objectFit: "cover"
+              }} 
+            />
+          </Box>
         ) : (
           <Card
             size="4"
