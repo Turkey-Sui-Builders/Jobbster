@@ -5,7 +5,8 @@ import {
   PersonIcon,
   FileTextIcon,
   CalendarIcon,
-  ExternalLinkIcon
+  ExternalLinkIcon,
+  CrossCircledIcon
 } from "@radix-ui/react-icons";
 import { useState, useEffect } from "react";
 import {
@@ -28,6 +29,7 @@ interface Application {
   coverLetter: string;
   appliedAt: number;
   isHired: boolean | null;
+  isDenied: boolean;
 }
 
 interface EmployerJob {
@@ -146,6 +148,7 @@ export default function ReviewApplications() {
                     coverLetter: appFields.cover_letter || "",
                     appliedAt: Date.now(),
                     isHired: job.hired_applicant === appFields.applicant ? true : null,
+                    isDenied: appFields.is_denied || false,
                   });
                 }
               } catch (err) {
@@ -168,7 +171,7 @@ export default function ReviewApplications() {
     fetchEmployerData();
   }, [account?.address, suiClient]);
 
-  const handleAction = async (application: Application) => {
+  const handleHire = async (application: Application) => {
     if (!account?.address) {
       alert("Please connect your wallet");
       return;
@@ -236,20 +239,88 @@ export default function ReviewApplications() {
     }
   };
 
+  const handleDeny = async (application: Application) => {
+    if (!account?.address) {
+      alert("Please connect your wallet");
+      return;
+    }
+
+    try {
+      const tx = new Transaction();
+
+      // Find the EmployerCap for this job
+      const ownedObjects = await suiClient.getOwnedObjects({
+        owner: account.address,
+        options: {
+          showContent: true,
+          showType: true,
+        },
+      });
+
+      const employerCap = ownedObjects.data.find((obj) => {
+        if (obj.data?.content?.dataType === "moveObject") {
+          const fields = obj.data.content.fields as any;
+          return fields.job_id === application.jobId;
+        }
+        return false;
+      });
+
+      if (!employerCap) {
+        alert("You don't have permission to deny applications for this job");
+        return;
+      }
+
+      tx.moveCall({
+        target: `${import.meta.env.VITE_PACKAGE_ID}::job_hire::deny_application`,
+        arguments: [
+          tx.object(application.jobId), // job: &mut Job
+          tx.object(employerCap.data!.objectId), // cap: &EmployerCap
+          tx.pure.address(application.applicant), // applicant: address
+          tx.object("0x6"), // clock: &Clock
+          tx.object(import.meta.env.VITE_VERSION_ID), // version: &Version
+        ],
+      });
+
+      const result = await signAndExecute({ transaction: tx });
+
+      await suiClient.waitForTransaction({
+        digest: result.digest,
+      });
+
+      await queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === "testnet" &&
+          query.queryKey[1] === "getOwnedObjects",
+      });
+
+      alert("Application denied successfully!");
+      setSelectedApplication(null);
+
+      // Refresh data
+      window.location.reload();
+    } catch (error) {
+      console.error("Error denying application:", error);
+      alert("Failed to deny application. Please try again.");
+    }
+  };
+
   const filteredApplications = selectedJob === "all"
     ? applications
     : applications.filter(app => app.jobId === selectedJob);
 
-  const getStatusConfig = (isHired: boolean | null) => {
+  const getStatusConfig = (isHired: boolean | null, isDenied: boolean) => {
     if (isHired === true) {
       return { color: "green", icon: <CheckCircledIcon />, label: "Hired" };
+    } else if (isDenied === true) {
+      return { color: "red", icon: <CrossCircledIcon />, label: "Denied" };
     } else {
       return { color: "gray", icon: <PersonIcon />, label: "Pending Review" };
     }
   };
 
-  const pendingCount = applications.filter(a => a.isHired === null).length;
+  const pendingCount = applications.filter(a => a.isHired === null && !a.isDenied).length;
   const hiredCount = applications.filter(a => a.isHired === true).length;
+  const deniedCount = applications.filter(a => a.isDenied === true).length;
 
   return (
     <Flex direction="column" gap="6">
@@ -278,6 +349,12 @@ export default function ReviewApplications() {
               <Flex direction="column" align="center" px="3">
                 <Text size="6" weight="bold" color="green">{hiredCount}</Text>
                 <Text size="1" color="gray">Hired</Text>
+              </Flex>
+            </Card>
+            <Card>
+              <Flex direction="column" align="center" px="3">
+                <Text size="6" weight="bold" color="red">{deniedCount}</Text>
+                <Text size="1" color="gray">Denied</Text>
               </Flex>
             </Card>
             <Card>
@@ -366,7 +443,7 @@ export default function ReviewApplications() {
         ) : (
           <Grid columns="1" gap="4">
             {filteredApplications.map((app) => {
-              const statusConfig = getStatusConfig(app.isHired);
+              const statusConfig = getStatusConfig(app.isHired, app.isDenied);
               
               return (
                 <Card key={app.id} size="3">
@@ -390,9 +467,6 @@ export default function ReviewApplications() {
                           </Heading>
                           <Text size="2" color="gray" weight="medium">
                             Applied for: {app.jobTitle}
-                          </Text>
-                          <Text size="1" color="gray">
-                            {app.company}
                           </Text>
                         </Box>
                         <Badge color={statusConfig.color as any} size="2" variant="soft">
@@ -498,15 +572,24 @@ export default function ReviewApplications() {
                                   </Box>
                                 </Box>
 
-                                {selectedApplication.isHired === null && (
+                                {selectedApplication.isHired === null && !selectedApplication.isDenied && (
                                   <Flex gap="3" mt="2">
                                     <Button
                                       style={{ flex: 1 }}
                                       color="green"
-                                      onClick={() => handleAction(selectedApplication)}
+                                      onClick={() => handleHire(selectedApplication)}
                                     >
                                       <CheckCircledIcon />
                                       Hire Applicant
+                                    </Button>
+                                    <Button
+                                      style={{ flex: 1 }}
+                                      color="red"
+                                      variant="soft"
+                                      onClick={() => handleDeny(selectedApplication)}
+                                    >
+                                      <CrossCircledIcon />
+                                      Deny Application
                                     </Button>
                                   </Flex>
                                 )}
@@ -515,6 +598,14 @@ export default function ReviewApplications() {
                                   <Card variant="surface" style={{ backgroundColor: "var(--green-2)" }}>
                                     <Text size="2" weight="medium">
                                       Status: Hired ✓
+                                    </Text>
+                                  </Card>
+                                )}
+
+                                {selectedApplication.isDenied && (
+                                  <Card variant="surface" style={{ backgroundColor: "var(--red-2)" }}>
+                                    <Text size="2" weight="medium" color="red">
+                                      Status: Application Denied ✗
                                     </Text>
                                   </Card>
                                 )}
@@ -538,16 +629,27 @@ export default function ReviewApplications() {
                           </Button>
                         </a>
 
-                        {app.isHired === null && (
-                          <Button
-                            size="2"
-                            color="green"
-                            variant="soft"
-                            onClick={() => handleAction(app)}
-                          >
-                            <CheckCircledIcon />
-                            Hire
-                          </Button>
+                        {app.isHired === null && !app.isDenied && (
+                          <>
+                            <Button
+                              size="2"
+                              color="green"
+                              variant="soft"
+                              onClick={() => handleHire(app)}
+                            >
+                              <CheckCircledIcon />
+                              Hire
+                            </Button>
+                            <Button
+                              size="2"
+                              color="red"
+                              variant="soft"
+                              onClick={() => handleDeny(app)}
+                            >
+                              <CrossCircledIcon />
+                              Deny
+                            </Button>
+                          </>
                         )}
                       </Flex>
                     </Box>

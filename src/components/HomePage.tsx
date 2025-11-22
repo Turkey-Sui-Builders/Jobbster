@@ -16,7 +16,7 @@ const CATEGORIES = [
   "Security",
   "Business Development",
   "Accounting",
-  "Infrastructure",
+  "Software Development",
   "Marketing",
   "Product Management"
 ];

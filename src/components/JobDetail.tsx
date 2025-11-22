@@ -251,9 +251,7 @@ export default function JobDetail() {
                     <Text size="3" color="gray" weight="medium">
                       {job.company}
                     </Text>
-                    <Text size="2" color="gray" mt="1">
-                      Employer: {job.employer.substring(0, 8)}...{job.employer.slice(-6)}
-                    </Text>
+                    
                   </Box>
                   <Badge size="3" color="iris" variant="soft">
                     {job.category}

@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Box, Button, Card, Container, Flex, Grid, Heading, Text } from "@radix-ui/themes";
 import { RocketIcon, LockClosedIcon, LightningBoltIcon, CheckCircledIcon } from "@radix-ui/react-icons";
 import suiLogo from "../assets/sui_white.png";
-import joboMascot from "../assets/jobo.jpg";
+import joboMascot from "../assets/logo5.jpg";
 
 export function LandingPage() {
   const navigate = useNavigate();
@@ -44,7 +44,7 @@ export function LandingPage() {
                 backdropFilter: "blur(10px)",
                 width: "fit-content"
               }}>
-                <img src={suiLogo} alt="Sui" style={{ width: "20px", height: "25px" }} />
+                <img src={suiLogo} alt="Sui" style={{ width: "20px", height: "px" }} />
                 <Text size="2" weight="medium" style={{ color: "white" }}>Powered by Sui Network</Text>
               </Flex>
 
@@ -162,7 +162,8 @@ export function LandingPage() {
                       objectFit: "contain",
                       position: "relative",
                       zIndex: 1,
-                      filter: "drop-shadow(0 10px 30px rgba(0,0,0,0.2))"
+                      filter: "#fff",
+                      background: "#fff"
                     }} 
                   />
                 </Box>
