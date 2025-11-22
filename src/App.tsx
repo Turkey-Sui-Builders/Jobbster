@@ -6,6 +6,7 @@ import HomePage from "./components/HomePage";
 import DashboardPage from "./components/DashboardPage";
 import JobDetail from "./components/JobDetail";
 import CreateJob from "./components/CreateJob";
+import Chatbot from "./components/Chatbot";
 import FindBestJobPage from "./components/FindBestJobPage"; // İlan Listesi (Önceki adımlarda placeholder yapmıştık)
 
 // Uygulama içi düzen (Navbar'ın göründüğü yer)
@@ -16,6 +17,7 @@ function AppLayout() {
       <Container size="3" pt="6" pb="6">
         <Outlet /> {/* Alt sayfalar buraya render olur */}
       </Container>
+      <Chatbot /> {/* Floating chatbot - her sayfada görünür */}
     </Box>
   );
 }
