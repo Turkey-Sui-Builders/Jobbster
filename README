@@ -1,0 +1,70 @@
+# 💼 Jobbster — Decentralized Hiring on Sui
+
+**Jobbster** is a fully decentralized recruitment platform built on the **Sui Blockchain**. It revolutionizes the hiring process by storing job listings, applications, and verified employment credentials (WorkProof NFTs) directly on-chain, eliminating intermediaries and ensuring transparency.
+
+🚀 **Built for the Sui Hackathon (Ankara, Turkey)**
+
+## 👥 The Team
+
+We are a team of 4 builders passionate about Web3 and Move:
+
+| Name                | Role                          | GitHub / Contact               |
+| ------------------- | ----------------------------- | ------------------------------ |
+| **[Batuhan Tekin]** | Smart Contract & Architecture | [@handle](https://github.com/) |
+| **[Emre Yürür]**    | Frontend & Integration        | [@handle](https://github.com/) |
+| **[Uğur Coşkun]**   | UI/UX Design & Product        | [@handle](https://github.com/) |
+| **[Batuhan Efe]**   | UI/UX Design & Product        | [@handle](https://github.com/) |
+
+---
+
+## 🌟 Key Features
+
+### 🏢 For Employers
+
+- **On-Chain Job Posting:** Create immutable job listings as **Shared Objects** accessible by everyone.
+- **Access Control:** Secure management via the **`EmployerCap`** (Capability Pattern). Only the job creator can manage applicants.
+- **Application Management:** Review candidates, **Deny** unsuitable applications, or **Hire** the best fit.
+- **Automated Credential Issuance:** Instantly mint and send a **WorkProof NFT** to the hired candidate.
+
+### 👨‍💻 For Candidates
+
+- **Direct Application:** Apply to jobs on-chain with a resume link and cover letter.
+- **Application Control:** Ability to **Cancel/Withdraw** an application (and receive storage rebate) before being processed.
+- **Verifiable CV:** Receive a **WorkProof NFT** upon hiring. This acts as an on-chain verified resume item, utilizing the **Sui Display Standard** to look professional in wallets.
+
+### 🛡️ Security & Architecture
+
+- **Dynamic Object Fields:** Scalable architecture to handle thousands of applications per job without clogging the main object.
+- **Clock Integration:** Enforces application deadlines automatically.
+- **Deny Logic:** Prevents hiring a candidate who has been explicitly marked as "Denied".
+
+---
+
+## 🛠️ Technical Stack
+
+- **Smart Contract:** Sui Move
+- **Client SDK:** @mysten/dapp-kit
+- **Standard:** Sui Display Standard (for WorkProof NFTs)
+- **Testing:** Sui Move Test Scenario (End-to-End coverage)
+
+---
+
+## 📦 Getting Started
+
+### 1. Prerequisites
+
+Ensure you have the [Sui Binaries](https://docs.sui.io/guides/developer/getting-started/sui-install) installed and configured.
+
+```bash
+sui --version
+git clone [https://github.com/YOUR_USERNAME/jobbster.git](https://github.com/YOUR_USERNAME/jobbster.git)
+cd jobbster
+sui move build
+sui move test
+
+sui client switch --env testnet
+sui client gas
+sui client publish --gas-budget 100000000
+```
+
+save this ids : [PackageId,Publisher,WorkProof,JobBoard,Version]
