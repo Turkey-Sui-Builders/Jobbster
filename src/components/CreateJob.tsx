@@ -1,5 +1,5 @@
 import { Box, Card, Flex, Heading, Text, TextField, TextArea, Button, Select } from "@radix-ui/themes";
-import { RocketIcon, CheckCircledIcon } from "@radix-ui/react-icons";
+import { RocketIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {

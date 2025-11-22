@@ -137,7 +137,6 @@ export async function downloadFromWalrus(blobId: string): Promise<Blob> {
 export async function encryptKeyWithSeal(
   symmetricKey: string,
   jobId: string,
-  packageId: string
 ): Promise<Uint8Array> {
   // For now, we'll use a simple approach
   // In production, this should use actual Seal SDK
