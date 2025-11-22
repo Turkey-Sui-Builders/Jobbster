@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Box, Button, Card, Container, Flex, Grid, Heading, Text } from "@radix-ui/themes";
 import { RocketIcon, LockClosedIcon, LightningBoltIcon, CheckCircledIcon } from "@radix-ui/react-icons";
 import suiLogo from "../assets/sui_white.png";
-import joboMascot from "../assets/logo5.jpg";
+import joboMascot from "../assets/jobo.jpg";
 
 export function LandingPage() {
   const navigate = useNavigate();
